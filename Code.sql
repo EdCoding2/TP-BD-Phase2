@@ -12,7 +12,8 @@ IF EXISTS(
 BEGIN
     --delete
     -- si bd est en cours d'exécution ça ne marche plus très bien.
-    EXEC master.dbo.sp_detach_db @dbname = N'Starplayers'
+    -- voir comment 
+    EXEC master.dbo.sp_detach_db @dbname = N'Starplayers14'
     DROP DATABASE Starplayers14
 END
 
@@ -484,6 +485,10 @@ ALTER TABLE Inscription
         FOREIGN KEY (EquipeID) REFERENCES Equipe(EquipeID);
 
 /* 4 Vues */
+
+-- CREATE VIEW vCompetitionsAnneeCourante AS 
+-- SELECT 
+-- ;
 
 /* 5 Fonctions scalaires Exigences techniques */
 
