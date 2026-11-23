@@ -1,10 +1,23 @@
 -- Eduola
 -- Date de remise: 2 décembre.
+USE master;
+GO
 
-
+-- Voir si la BD Existe déjà, si elle existe, delete. 
+IF EXISTS(
+    SELECT 1 
+    FROM sys.databases
+    WHERE name = N'Starplayers14'
+)
+BEGIN
+    --delete
+    -- si bd est en cours d'exécution ça ne marche plus très bien.
+    EXEC master.dbo.sp_detach_db @dbname = N'Starplayers'
+    DROP DATABASE Starplayers14
+END
 
 /* 1 Creation de la base de donnees */
-USE master
+
 CREATE DATABASE [Starplayers14]
 ON PRIMARY
 (
