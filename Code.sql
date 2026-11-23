@@ -439,7 +439,7 @@ ALTER TABLE Machine
 /*ENREGISTREMENT MACHINE */
 
 ALTER TABLE EnregistrementMachine
-    ADD EnregistrementMachineID INT IDENTIFY(1,1) NOT NULL,
+    ADD EnregistrementMachineID INT IDENTITY(1,1) NOT NULL,
         CONSTRAINT PK_EnregistrementMachine PRIMARY KEY (EnregistrementMachine);
 
 ALTER TABLE EnregistrementMachine
