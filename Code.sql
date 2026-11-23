@@ -28,9 +28,7 @@ GO
 
 /* 2 Creation des tables (et contraintes) */
 
-/* ==========================================
-   1. PAYS
-========================================== */
+/* 1. PAYS*/
 
 CREATE TABLE Pays
 (
@@ -41,9 +39,7 @@ CREATE TABLE Pays
 GO
 
 
-/* ==========================================
-   2. ENTRAINEUR
-========================================== */
+/*2. ENTRAINEUR */
 
 CREATE TABLE Entraineur
 (
@@ -54,9 +50,7 @@ CREATE TABLE Entraineur
 GO
 
 
-/* ==========================================
-   3. ORGANISATEUR
-========================================== */
+/*3. ORGANISATEUR */
 
 CREATE TABLE Organisateur
 (
@@ -69,9 +63,7 @@ CREATE TABLE Organisateur
 GO
 
 
-/* ==========================================
-   4. TYPE ETABLISSEMENT
-========================================== */
+/*4. TYPE ETABLISSEMENT*/
 
 CREATE TABLE TypeEtablissement
 (
@@ -81,9 +73,7 @@ CREATE TABLE TypeEtablissement
 GO
 
 
-/* ==========================================
-   5. TYPE JEU
-========================================== */
+/* 5. TYPE JEU */
 
 CREATE TABLE TypeJeu
 (
@@ -93,9 +83,7 @@ CREATE TABLE TypeJeu
 GO
 
 
-/* ==========================================
-   6. COMPAGNIE
-========================================== */
+/*6. COMPAGNIE */
 
 CREATE TABLE Compagnie
 (
@@ -106,9 +94,7 @@ CREATE TABLE Compagnie
 GO
 
 
-/* ==========================================
-   7. JOUEUR
-========================================== */
+/*7. JOUEUR */
 
 CREATE TABLE Joueur
 (
@@ -124,9 +110,7 @@ CREATE TABLE Joueur
 GO
 
 
-/* ==========================================
-   8. EQUIPE
-========================================== */
+/* 8. EQUIPE */
 
 CREATE TABLE Equipe
 (
@@ -139,9 +123,7 @@ CREATE TABLE Equipe
 GO
 
 
-/* ==========================================
-   9. ETABLISSEMENT
-========================================== */
+/* 9. ETABLISSEMENT */
 
 CREATE TABLE Etablissement
 (
@@ -155,9 +137,7 @@ CREATE TABLE Etablissement
 GO
 
 
-/* ==========================================
-   10. TOURNOI
-========================================== */
+/*10. TOURNOI*/
 
 CREATE TABLE Tournoi
 (
@@ -171,9 +151,7 @@ CREATE TABLE Tournoi
 GO
 
 
-/* ==========================================
-   11. JEU
-========================================== */
+/*11. JEU */
 
 CREATE TABLE Jeu
 (
@@ -189,9 +167,7 @@ CREATE TABLE Jeu
 GO
 
 
-/* ==========================================
-   12. COMPETITION
-========================================== */
+/* 12. COMPETITION */
 
 CREATE TABLE Competition
 (
@@ -204,9 +180,7 @@ CREATE TABLE Competition
 GO
 
 
-/* ==========================================
-   13. LOCAL
-========================================== */
+/* 13. LOCAL */
 
 CREATE TABLE [Local]
 (
@@ -218,9 +192,7 @@ CREATE TABLE [Local]
 GO
 
 
-/* ==========================================
-   14. MACHINE
-========================================== */
+/*14. MACHINE */
 
 CREATE TABLE Machine
 (
@@ -234,9 +206,7 @@ CREATE TABLE Machine
 GO
 
 
-/* ==========================================
-   15. ENREGISTREMENT MACHINE
-========================================== */
+/* 15. ENREGISTREMENT MACHINE */
 
 CREATE TABLE EnregistrementMachine
 (
@@ -247,9 +217,7 @@ CREATE TABLE EnregistrementMachine
 GO
 
 
-/* ==========================================
-   16. INFRACTION
-========================================== */
+/*16. INFRACTION */
 
 CREATE TABLE Infraction
 (
@@ -265,9 +233,7 @@ CREATE TABLE Infraction
 GO
 
 
-/* ==========================================
-   17. INSCRIPTION
-========================================== */
+/* 17. INSCRIPTION */
 
 CREATE TABLE Inscription
 (
@@ -281,9 +247,7 @@ CREATE TABLE Inscription
 GO
 
 /* 3 Ajout des relations (cles etrangeres + clées primaires) */
-/* ==========================================
-   JOUEUR
-========================================== */
+/*JOUEUR */
 
 ALTER TABLE Joueur
     ADD CONSTRAINT PK_Joueur
@@ -299,18 +263,14 @@ ALTER TABLE Joueur
         FOREIGN KEY (JEquipeID) REFERENCES Equipe(EquipeID);
 
 
-/* ==========================================
-   PAYS
-========================================== */
+/*PAYS */
 
 ALTER TABLE Pays
     ADD CONSTRAINT PK_PaysID
     PRIMARY KEY (PaysID);
 
 
-/* ==========================================
-   EQUIPE
-========================================== */
+/* EQUIPE */
 
 ALTER TABLE Equipe
     ADD CONSTRAINT PK_EquipeID
@@ -331,27 +291,21 @@ ALTER TABLE Equipe
         FOREIGN KEY (SponsorID) REFERENCES Compagnie(CompagnieID);
 
 
-/* ==========================================
-   ENTRAINEUR
-========================================== */
+/* ENTRAINEUR */
 
 ALTER TABLE Entraineur
     ADD CONSTRAINT PK_EntraineurID
     PRIMARY KEY (EntraineurID);
 
 
-/* ==========================================
-   ORGANISATEUR
-========================================== */
+/* ORGANISATEUR */
 
 ALTER TABLE Organisateur
     ADD CONSTRAINT PK_OrganisateurID
     PRIMARY KEY (OrganisateurID);
 
 
-/* ==========================================
-   ETABLISSEMENT
-========================================== */
+/* ETABLISSEMENT */
 
 ALTER TABLE Etablissement
     ADD CONSTRAINT PK_EtablissementID
@@ -369,18 +323,14 @@ ALTER TABLE Etablissement
         REFERENCES TypeEtablissement(TypeEtablissementID);
 
 
-/* ==========================================
-   TYPE ETABLISSEMENT
-========================================== */
+/*TYPE ETABLISSEMENT */
 
 ALTER TABLE TypeEtablissement
     ADD CONSTRAINT PK_TypeEtablissementID
     PRIMARY KEY (TypeEtablissementID);
 
 
-/* ==========================================
-   TOURNOI
-========================================== */
+/* TOURNOI */
 
 ALTER TABLE Tournoi
     ADD CONSTRAINT PK_TournoiID
@@ -399,9 +349,7 @@ ALTER TABLE Tournoi
         REFERENCES Organisateur(OrganisateurID);
 
 
-/* ==========================================
-   JEU
-========================================== */
+/* JEU */
 
 ALTER TABLE Jeu
     ADD CONSTRAINT PK_JeuID
@@ -426,18 +374,14 @@ ALTER TABLE Jeu
         FOREIGN KEY (FournisseurID) REFERENCES Compagnie(CompagnieID);
 
 
-/* ==========================================
-   TYPE JEU
-========================================== */
+/* TYPE JEU */
 
 ALTER TABLE TypeJeu
     ADD CONSTRAINT PK_TypeJeuID
     PRIMARY KEY (TypeJeuID);
 
 
-/* ==========================================
-   COMPAGNIE
-========================================== */
+/* COMPAGNIE */
 
 ALTER TABLE Compagnie
     ADD CONSTRAINT PK_CompagnieID
@@ -450,9 +394,7 @@ ALTER TABLE Compagnie
         FOREIGN KEY (PaysID) REFERENCES Pays(PaysID);
 
 
-/* ==========================================
-   COMPETITION
-========================================== */
+/* COMPETITION */
 
 ALTER TABLE Competition
     ADD CONSTRAINT PK_CompetitionID
@@ -473,9 +415,7 @@ ALTER TABLE Competition
         FOREIGN KEY (LocalID) REFERENCES [Local](LocalID);
 
 
-/* ==========================================
-   LOCAL
-========================================== */
+/* LOCAL */
 
 ALTER TABLE [Local]
     ADD CONSTRAINT PK_LocalID
@@ -489,18 +429,14 @@ ALTER TABLE [Local]
         REFERENCES Etablissement(EtablissementID);
 
 
-/* ==========================================
-   MACHINE
-========================================== */
+/* MACHINE */
 
 ALTER TABLE Machine
     ADD CONSTRAINT PK_MachineID
     PRIMARY KEY (MachineID);
 
 
-/* ==========================================
-   ENREGISTREMENT MACHINE
-========================================== */
+/*ENREGISTREMENT MACHINE */
 
 ALTER TABLE EnregistrementMachine
     ADD CONSTRAINT PK_TournoiID PRIMARY KEY (TournoiID),
@@ -521,9 +457,7 @@ ALTER TABLE EnregistrementMachine
         FOREIGN KEY (MachineID) REFERENCES Machine(MachineID);
 
 
-/* ==========================================
-   INFRACTION
-========================================== */
+/*INFRACTION */
 
 ALTER TABLE Infraction
     ADD CONSTRAINT PK_InfractionID
@@ -544,9 +478,7 @@ ALTER TABLE Infraction
         FOREIGN KEY (CompetitionID) REFERENCES Competition(CompetitionID);
 
 
-/* ==========================================
-   INSCRIPTION
-========================================== */
+/* INSCRIPTION */
 
 ALTER TABLE Inscription
     ADD CONSTRAINT PK_InscriptionID
