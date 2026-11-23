@@ -439,8 +439,8 @@ ALTER TABLE Machine
 /*ENREGISTREMENT MACHINE */
 
 ALTER TABLE EnregistrementMachine
-    ADD CONSTRAINT PK_TournoiID PRIMARY KEY (TournoiID),
-        CONSTRAINT PK_JoueurID PRIMARY KEY (JoueurID);
+    ADD EnregistrementMachineID,
+        CONSTRAINT PK_EnregistrementMachine PRIMARY KEY (EnregistrementMachine);
 
 ALTER TABLE EnregistrementMachine
     ADD TournoiID INT NOT NULL,
