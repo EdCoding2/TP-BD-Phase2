@@ -1,29 +1,34 @@
 -- Eduola
 -- Date de remise: 2 décembre.
+
+
+
+/* 1 Creation de la base de donnees */
+
 USE master;
 GO
 
--- Voir si la BD Existe déjà, si elle existe, delete. 
+-- Voir si la BD existe deja; si elle existe, la supprimer.
+-- SINGLE_USER : si la BD est en cours d'utilisation, la suppression echouerait.
 IF EXISTS(
-    SELECT 1 
+    SELECT 1
     FROM sys.databases
     WHERE name = N'Starplayers'
 )
 BEGIN
-    --delete
-    -- si bd est en cours d'exécution ça ne marche plus très bien.
-    -- voir comment 
     ALTER DATABASE Starplayers
         SET SINGLE_USER
-        WITH ROLLBACK IMMEDIATE
-    DROP DATABASE Starplayers
+        WITH ROLLBACK IMMEDIATE;
+    DROP DATABASE Starplayers;
 END
+GO
 
 
+-- Dossier de l'instance plutot qu'un chemin ecrit en dur : le script fonctionne
+-- sur n'importe quel serveur et les fichiers .mdf/.ldf sont supprimes avec la BD.
 DECLARE @dossier NVARCHAR(260) =
     CAST(SERVERPROPERTY('InstanceDefaultDataPath') AS NVARCHAR(260));
 
-/* 1 Creation de la base de donnees */
 DECLARE @sql NVARCHAR(MAX) = N'
 CREATE DATABASE [Starplayers]
 ON PRIMARY
@@ -49,19 +54,23 @@ GO
 USE Starplayers;
 GO
 
-/* 2 Creation des tables (et contraintes) */
 
-/* 1. Pays */
+
+
+
+/* 2 Creation des tables */
+
+-- 1. Pays
 CREATE TABLE Pays
 (
-    PaysID INT IDENTITY(1,1),
+    PaysID SMALLINT IDENTITY(1,1),
     PaysNom VARCHAR(100) NOT NULL,
-    PaysCodeIso VARCHAR(100) NOT NULL
+    PaysCodeIso CHAR(2) NOT NULL
 );
 GO
 
 
-/*2. Entraineur */
+-- 2. Entraineur
 CREATE TABLE Entraineur
 (
     EntraineurID INT IDENTITY(1,1),
@@ -71,439 +80,386 @@ CREATE TABLE Entraineur
 GO
 
 
-/*3. Organisateur */
+-- 3. Organisateur
 CREATE TABLE Organisateur
 (
     OrganisateurID INT IDENTITY(1,1),
     OrganisateurNom VARCHAR(100) NOT NULL,
     OrganisateurPrenom VARCHAR(100) NOT NULL,
-    OrganisateurCourriel VARCHAR(255) NOT NULL UNIQUE,
-    OrganisateurTelephone VARCHAR(13)
+    OrganisateurCourriel VARCHAR(255) NOT NULL,
+    OrganisateurTelephone VARCHAR(15) NULL
 );
 GO
 
 
-/*4. TypeEtablissement */
+-- 4. TypeEtablissement
 CREATE TABLE TypeEtablissement
 (
-    TypeEtablissementID INT IDENTITY(1,1),
+    TypeEtablissementID TINYINT IDENTITY(1,1),
     TypeEtablissementNom VARCHAR(100) NOT NULL
 );
 GO
 
 
-/* 5. TypeJeu */
+-- 5. TypeJeu
 CREATE TABLE TypeJeu
 (
-    TypeJeuID INT IDENTITY(1,1),
+    TypeJeuID TINYINT IDENTITY(1,1),
     TypeJeuNom VARCHAR(100) NOT NULL
 );
 GO
 
 
-/*6. Compagnie */
+-- 6. Compagnie (studio, editeur, fournisseur, commanditaire)
 CREATE TABLE Compagnie
 (
     CompagnieID INT IDENTITY(1,1),
-    CompagnieNom VARCHAR(100) NOT NULL
-    -- id pays
+    CompagnieNom VARCHAR(100) NOT NULL,
+    PaysID SMALLINT NOT NULL
 );
 GO
 
 
-/*7. Joueur */
+-- 7. Joueur : le pays du joueur donne sa nationalite; EquipeID = son equipe
 CREATE TABLE Joueur
 (
     JoueurID INT IDENTITY(1,1),
     JoueurPseudo VARCHAR(100) NOT NULL,
     JoueurNom VARCHAR(100) NOT NULL,
-    JoueurPrenom VARCHAR(20) NOT NULL,
+    JoueurPrenom VARCHAR(100) NOT NULL,
     JoueurDateNaissance DATE NOT NULL,
-    JoueurCourriel VARCHAR(255) NOT NULL UNIQUE
-    -- pays id: int, fk
-    -- equipe id: int, fk
+    JoueurCourriel VARCHAR(255) NOT NULL,
+    PaysID SMALLINT NOT NULL,
+    EquipeID INT NULL
 );
 GO
 
 
-/* 8. Equipe */
+-- 8. Equipe; La nationalite d'une equipe est celle de ses joueurs (pas de pays dans Equipe)
 CREATE TABLE Equipe
 (
     EquipeID INT IDENTITY(1,1),
-    EquipeNom VARCHAR(100) NOT NULL
-    -- chef: int, fk
-    -- entraineur: int, fk
-    -- sponsor: int, fk
+    EquipeNom VARCHAR(100) NOT NULL,
+    ChefID INT NOT NULL,
+    EntraineurID INT NOT NULL,
+    SponsorID INT NULL
 );
 GO
 
 
-/* 9. Etablissement */
+-- 9. Etablissement
 CREATE TABLE Etablissement
 (
     EtablissementID INT IDENTITY(1,1),
     EtablissementNom VARCHAR(100) NOT NULL,
     EtablissementAdresse VARCHAR(100) NOT NULL,
-    EtablissementVille VARCHAR(255) NOT NULL UNIQUE
-    -- pays: int, fk
-    -- type detablissement: int, fk
+    EtablissementVille VARCHAR(100) NOT NULL,
+    PaysID SMALLINT NOT NULL,
+    TypeEtablissementID TINYINT NOT NULL
 );
 GO
 
 
-/*10. Tournoi */
+-- 10. Tournoi
 CREATE TABLE Tournoi
 (
     TournoiID INT IDENTITY(1,1),
     TournoiNom VARCHAR(100) NOT NULL,
     TournoiDateDebut DATE NOT NULL,
-    TournoiDateFin DATE NOT NULL
-    -- id etablissement
-    -- id organisateur
+    TournoiDateFin DATE NOT NULL,
+    EtablissementID INT NOT NULL,
+    OrganisateurID INT NOT NULL
 );
 GO
 
 
-/*11. Jeu */
+-- 11. Jeu : JeuEstEnEquipe = 1 (jeu d'equipe) ou 0 (jeu solo). Le type d'une competition (solo/equipe) se deduit de son jeu.
 CREATE TABLE Jeu
 (
     JeuID INT IDENTITY(1,1),
     JeuNom VARCHAR(100) NOT NULL,
-    JeuAnneParution INT NOT NULL, -- check pas dans le futur
-    EstEnEquipe TINYINT NOT NULL
-    -- id type jeu
-    -- id studio
-    -- id editeur
-    -- id fournisseur
+    JeuAnneeParution SMALLINT NOT NULL,
+    JeuEstEnEquipe BIT NOT NULL,
+    TypeJeuID TINYINT NOT NULL,
+    StudioID INT NOT NULL,
+    EditeurID INT NOT NULL,
+    FournisseurID INT NULL
 );
 GO
 
 
-/* 12. Competition */
+-- 12. Competition (une seule journee = une seule date)
 CREATE TABLE Competition
 (
     CompetitionID INT IDENTITY(1,1),
-    CompetitionDate DATE NOT NULL
-    -- id tournoi
-    -- id jeu
-    -- id local
+    CompetitionDate DATE NOT NULL,
+    TournoiID INT NOT NULL,
+    JeuID INT NOT NULL,
+    LocalID INT NOT NULL
 );
 GO
 
 
-/* 13. Local */
+-- 13. Local
 CREATE TABLE [Local]
 (
     LocalID INT IDENTITY(1,1),
     LocalNom VARCHAR(50) NOT NULL,
-    LocalCapacite INT
-    -- id etablissement
+    LocalCapacite SMALLINT NULL,
+    EtablissementID INT NOT NULL
 );
 GO
 
 
-/*14. Machine */
+-- 14. Machine (numero de serie au format SP-0000-0000)
 CREATE TABLE Machine
 (
     MachineID INT IDENTITY(1,1),
-    MachineNumeroSerie VARCHAR(15) NOT NULL, -- SP-0000-0000
+    MachineNumeroSerie CHAR(12) NOT NULL,
     MachineProcesseur VARCHAR(35) NOT NULL,
     MachineGraphique VARCHAR(35) NOT NULL,
-    MachineMemoire INT NOT NULL,
+    MachineMemoire SMALLINT NOT NULL, -- en Go
     MachineSystemeExploitation VARCHAR(25) NOT NULL
 );
 GO
 
 
-/* 15. EnregistrementMachine */
+-- 15. EnregistrementMachine : machine enregistree par un joueur pour un tournoi
 CREATE TABLE EnregistrementMachine
 (
-    TournoiID INT NOT NULL, -- id tournoi cp, fk
-    JoueurID INT NOT NULL,  -- id joueur cp, fk
-    MachineID INT NOT NULL -- id machine fk
+    TournoiID INT NOT NULL,
+    JoueurID INT NOT NULL,
+    MachineID INT NOT NULL
 );
 GO
 
 
-/*16. Infraction */
+-- 16. Infraction : avertissement, sanction (1 a 5 points) ou bannissement
 CREATE TABLE Infraction
 (
     InfractionID INT IDENTITY(1,1),
     InfractionDate DATE NOT NULL,
     InfractionDescription VARCHAR(200) NOT NULL,
     InfractionType VARCHAR(20) NOT NULL,
-    InfractionPoints INT NOT NULL
-    -- id joueur
-    -- id equipe
-    -- id competition
+    InfractionPoints TINYINT NOT NULL,
+    JoueurID INT NOT NULL,
+    EquipeID INT NULL,
+    CompetitionID INT NOT NULL
 );
 GO
 
 
-/* 17. Inscription */
+-- 17. Inscription : solo (JoueurID) OU equipe (EquipeID).
 CREATE TABLE Inscription
 (
     InscriptionID INT IDENTITY(1,1),
-    InscriptionRangFinal INT NOT NULL,
-    InscriptionDATE DATE NOT NULL
-    -- id competition
-    -- id joueur null si id equipe
-    -- id equipe null si id joueur
+    InscriptionDate DATE NOT NULL,
+    InscriptionRangFinal SMALLINT NULL,
+    CompetitionID INT NOT NULL,
+    JoueurID INT NULL,
+    EquipeID INT NULL
 );
 GO
 
-/* 3 Ajout des relations (cles etrangeres + clees primaires) */
-
-/* Pays */
-ALTER TABLE Pays
-    ADD CONSTRAINT PK_PaysID
-    PRIMARY KEY (PaysID);
-
-/* Equipe */
-ALTER TABLE Equipe
-    ADD CONSTRAINT PK_EquipeID
-    PRIMARY KEY (EquipeID);
-
-/* Joueur */
-ALTER TABLE Joueur
-    ADD CONSTRAINT PK_Joueur
-    PRIMARY KEY (JoueurID);
-
-ALTER TABLE Joueur
-    ADD JoueurPays INT NOT NULL,
-        CONSTRAINT FK_JoueurPays_PaysID
-        FOREIGN KEY (JoueurPays) REFERENCES Pays(PaysID),
-
-        JEquipeID INT,
-        CONSTRAINT FK_JEquipeID_EquipeID
-        FOREIGN KEY (JEquipeID) REFERENCES Equipe(EquipeID);
-
-
-/* Entraineur */
-ALTER TABLE Entraineur
-    ADD CONSTRAINT PK_EntraineurID
-    PRIMARY KEY (EntraineurID);
-
-
-/* Compagnie */
-ALTER TABLE Compagnie
-    ADD CONSTRAINT PK_CompagnieID
-    PRIMARY KEY (CompagnieID);
-
-ALTER TABLE Compagnie
-    ADD PaysID INT NOT NULL,
-
-        CONSTRAINT FK_Compagnie_PaysID_PaysID
-        FOREIGN KEY (PaysID) REFERENCES Pays(PaysID);
-
-
-/* Equipe2 */
-ALTER TABLE Equipe
-    ADD ChefID INT NOT NULL,
-        EntraineurID INT NOT NULL,
-        SponsorID INT NOT NULL,
-
-        CONSTRAINT FK_ChefID_JoueurID
-        FOREIGN KEY (ChefID) REFERENCES Joueur(JoueurID),
-
-        CONSTRAINT FK_EntraineurID_EntraineurID
-        FOREIGN KEY (EntraineurID) REFERENCES Entraineur(EntraineurID),
-
-        CONSTRAINT FK_SponsorID_CompagnieID
-        FOREIGN KEY (SponsorID) REFERENCES Compagnie(CompagnieID);
 
 
 
 
+/* 3 Ajout des contraintes et des relations */
 
-/* Organisateur */
-ALTER TABLE Organisateur
-    ADD CONSTRAINT PK_OrganisateurID
-    PRIMARY KEY (OrganisateurID);
+-- Pays
+ALTER TABLE Pays ADD
+    CONSTRAINT PK_Pays PRIMARY KEY (PaysID),
+    CONSTRAINT UQ_Pays_Nom UNIQUE (PaysNom),
+    CONSTRAINT UQ_Pays_CodeIso UNIQUE (PaysCodeIso);
 
-/* TypeEtablissement */
-ALTER TABLE TypeEtablissement
-    ADD CONSTRAINT PK_TypeEtablissementID
-    PRIMARY KEY (TypeEtablissementID);
+-- Entraineur
+ALTER TABLE Entraineur ADD
+    CONSTRAINT PK_Entraineur PRIMARY KEY (EntraineurID);
 
-/* Etablissement */
-ALTER TABLE Etablissement
-    ADD CONSTRAINT PK_EtablissementID
-    PRIMARY KEY (EtablissementID);
+-- Organisateur
+ALTER TABLE Organisateur ADD
+    CONSTRAINT PK_Organisateur PRIMARY KEY (OrganisateurID),
+    CONSTRAINT UQ_Organisateur_Courriel UNIQUE (OrganisateurCourriel);
 
-ALTER TABLE Etablissement
-    ADD PaysID INT NOT NULL,
-        TypeEtablissementID INT NOT NULL,
+-- TypeEtablissement
+ALTER TABLE TypeEtablissement ADD
+    CONSTRAINT PK_TypeEtablissement PRIMARY KEY (TypeEtablissementID);
 
-        CONSTRAINT FK_Etablissement_PaysID_PaysID
-        FOREIGN KEY (PaysID) REFERENCES Pays(PaysID),
+-- TypeJeu
+ALTER TABLE TypeJeu ADD
+    CONSTRAINT PK_TypeJeu PRIMARY KEY (TypeJeuID);
 
-        CONSTRAINT FK_TypeEtablissementID_TypeEtablissementID
-        FOREIGN KEY (TypeEtablissementID)
-        REFERENCES TypeEtablissement(TypeEtablissementID);
+-- Compagnie
+ALTER TABLE Compagnie ADD
+    CONSTRAINT PK_Compagnie PRIMARY KEY (CompagnieID),
+    CONSTRAINT FK_Compagnie_Pays FOREIGN KEY (PaysID) REFERENCES Pays(PaysID);
 
+-- Joueur
+ALTER TABLE Joueur ADD
+    CONSTRAINT PK_Joueur PRIMARY KEY (JoueurID),
+    CONSTRAINT UQ_Joueur_Courriel UNIQUE (JoueurCourriel),
+    CONSTRAINT CK_Joueur_DateNaissance CHECK (JoueurDateNaissance <= CAST(GETDATE() AS DATE)),
+    CONSTRAINT FK_Joueur_Pays FOREIGN KEY (PaysID) REFERENCES Pays(PaysID);
 
+-- Equipe
+ALTER TABLE Equipe ADD
+    CONSTRAINT PK_Equipe PRIMARY KEY (EquipeID),
+    CONSTRAINT UQ_Equipe_Nom UNIQUE (EquipeNom),
+    CONSTRAINT UQ_Equipe_Chef UNIQUE (ChefID),
+    CONSTRAINT FK_Equipe_Chef FOREIGN KEY (ChefID) REFERENCES Joueur(JoueurID),
+    CONSTRAINT FK_Equipe_Entraineur FOREIGN KEY (EntraineurID) REFERENCES Entraineur(EntraineurID),
+    CONSTRAINT FK_Equipe_Sponsor FOREIGN KEY (SponsorID) REFERENCES Compagnie(CompagnieID);
 
+-- Joueur -> Equipe
+-- ajoutee ici car Joueur et Equipe se referencent l'une l'autre
+ALTER TABLE Joueur ADD
+    CONSTRAINT FK_Joueur_Equipe FOREIGN KEY (EquipeID) REFERENCES Equipe(EquipeID);
 
+-- Etablissement
+ALTER TABLE Etablissement ADD
+    CONSTRAINT PK_Etablissement PRIMARY KEY (EtablissementID),
+    CONSTRAINT FK_Etablissement_Pays FOREIGN KEY (PaysID) REFERENCES Pays(PaysID),
+    CONSTRAINT FK_Etablissement_Type FOREIGN KEY (TypeEtablissementID) REFERENCES TypeEtablissement(TypeEtablissementID);
 
-/* Tournoi */
-ALTER TABLE Tournoi
-    ADD CONSTRAINT PK_TournoiID
-    PRIMARY KEY (TournoiID);
+-- Tournoi
+ALTER TABLE Tournoi ADD
+    CONSTRAINT PK_Tournoi PRIMARY KEY (TournoiID),
+    CONSTRAINT CK_Tournoi_Dates CHECK (TournoiDateFin >= TournoiDateDebut),
+    CONSTRAINT FK_Tournoi_Etablissement FOREIGN KEY (EtablissementID) REFERENCES Etablissement(EtablissementID),
+    CONSTRAINT FK_Tournoi_Organisateur FOREIGN KEY (OrganisateurID) REFERENCES Organisateur(OrganisateurID);
 
-ALTER TABLE Tournoi
-    ADD EtablissementID INT NOT NULL,
-        OrganisateurID INT NOT NULL,
+-- Jeu
+ALTER TABLE Jeu ADD
+    CONSTRAINT PK_Jeu PRIMARY KEY (JeuID),
+    CONSTRAINT DF_Jeu_EstEnEquipe DEFAULT 0 FOR JeuEstEnEquipe,
+    CONSTRAINT CK_Jeu_AnneeParution CHECK (JeuAnneeParution BETWEEN 1950 AND YEAR(GETDATE())),
+    CONSTRAINT FK_Jeu_TypeJeu FOREIGN KEY (TypeJeuID) REFERENCES TypeJeu(TypeJeuID),
+    CONSTRAINT FK_Jeu_Studio FOREIGN KEY (StudioID) REFERENCES Compagnie(CompagnieID),
+    CONSTRAINT FK_Jeu_Editeur FOREIGN KEY (EditeurID) REFERENCES Compagnie(CompagnieID),
+    CONSTRAINT FK_Jeu_Fournisseur FOREIGN KEY (FournisseurID) REFERENCES Compagnie(CompagnieID);
 
-        CONSTRAINT FK_Tournoi_EtablissementID_EtablissementID
-        FOREIGN KEY (EtablissementID)
-        REFERENCES Etablissement(EtablissementID),
+-- Local
+ALTER TABLE [Local] ADD
+    CONSTRAINT PK_Local PRIMARY KEY (LocalID),
+    CONSTRAINT UQ_Local_Etablissement_Nom UNIQUE (EtablissementID, LocalNom),
+    CONSTRAINT CK_Local_Capacite CHECK (LocalCapacite > 0),
+    CONSTRAINT FK_Local_Etablissement FOREIGN KEY (EtablissementID) REFERENCES Etablissement(EtablissementID);
 
-        CONSTRAINT FK_OrganisateurID_OrganisateurID
-        FOREIGN KEY (OrganisateurID)
-        REFERENCES Organisateur(OrganisateurID);
+-- Competition
+ALTER TABLE Competition ADD
+    CONSTRAINT PK_Competition PRIMARY KEY (CompetitionID),
+    CONSTRAINT FK_Competition_Tournoi FOREIGN KEY (TournoiID) REFERENCES Tournoi(TournoiID),
+    CONSTRAINT FK_Competition_Jeu FOREIGN KEY (JeuID) REFERENCES Jeu(JeuID),
+    CONSTRAINT FK_Competition_Local FOREIGN KEY (LocalID) REFERENCES [Local](LocalID);
 
+-- Machine
+ALTER TABLE Machine ADD
+    CONSTRAINT PK_Machine PRIMARY KEY (MachineID),
+    CONSTRAINT UQ_Machine_NumeroSerie UNIQUE (MachineNumeroSerie),
+    CONSTRAINT CK_Machine_NumeroSerie CHECK (MachineNumeroSerie LIKE 'SP-[0-9][0-9][0-9][0-9]-[0-9][0-9][0-9][0-9]'),
+    CONSTRAINT CK_Machine_Memoire CHECK (MachineMemoire > 0);
 
-/* Jeu */
-ALTER TABLE Jeu
-    ADD CONSTRAINT PK_JeuID
-    PRIMARY KEY (JeuID);
+-- EnregistrementMachine; la cle composee (tournoi, joueur) = une seule machine par joueur et par tournoi
+ALTER TABLE EnregistrementMachine ADD
+    CONSTRAINT PK_EnregistrementMachine PRIMARY KEY (TournoiID, JoueurID),
+    CONSTRAINT FK_EnregistrementMachine_Tournoi FOREIGN KEY (TournoiID) REFERENCES Tournoi(TournoiID),
+    CONSTRAINT FK_EnregistrementMachine_Joueur FOREIGN KEY (JoueurID) REFERENCES Joueur(JoueurID),
+    CONSTRAINT FK_EnregistrementMachine_Machine FOREIGN KEY (MachineID) REFERENCES Machine(MachineID);
 
-/* TypeJeu */
-ALTER TABLE TypeJeu
-    ADD CONSTRAINT PK_TypeJeuID
-    PRIMARY KEY (TypeJeuID);
+-- Infraction; avertissement, sanction (1 a 5 points) ou bannissement
+ALTER TABLE Infraction ADD
+    CONSTRAINT PK_Infraction PRIMARY KEY (InfractionID),
+    CONSTRAINT DF_Infraction_Date DEFAULT GETDATE() FOR InfractionDate,
+    CONSTRAINT DF_Infraction_Points DEFAULT 0 FOR InfractionPoints,
+    CONSTRAINT CK_Infraction_Type CHECK (InfractionType IN ('Avertissement', 'Sanction', 'Bannissement')),
+    CONSTRAINT CK_Infraction_Points CHECK (
+        (InfractionType = 'Sanction' AND InfractionPoints BETWEEN 1 AND 5)
+        OR (InfractionType <> 'Sanction' AND InfractionPoints = 0)),
+    CONSTRAINT FK_Infraction_Joueur FOREIGN KEY (JoueurID) REFERENCES Joueur(JoueurID),
+    CONSTRAINT FK_Infraction_Equipe FOREIGN KEY (EquipeID) REFERENCES Equipe(EquipeID),
+    CONSTRAINT FK_Infraction_Competition FOREIGN KEY (CompetitionID) REFERENCES Competition(CompetitionID);
 
+-- Inscription; une inscription est soit solo (JoueurID), soit d'equipe (EquipeID)
+ALTER TABLE Inscription ADD
+    CONSTRAINT PK_Inscription PRIMARY KEY (InscriptionID),
+    CONSTRAINT DF_Inscription_Date DEFAULT GETDATE() FOR InscriptionDate,
+    CONSTRAINT CK_Inscription_JoueurOuEquipe CHECK (
+        (JoueurID IS NOT NULL AND EquipeID IS NULL)
+        OR (JoueurID IS NULL AND EquipeID IS NOT NULL)),
+    CONSTRAINT CK_Inscription_Rang CHECK (InscriptionRangFinal > 0),
+    CONSTRAINT FK_Inscription_Competition FOREIGN KEY (CompetitionID) REFERENCES Competition(CompetitionID),
+    CONSTRAINT FK_Inscription_Joueur FOREIGN KEY (JoueurID) REFERENCES Joueur(JoueurID),
+    CONSTRAINT FK_Inscription_Equipe FOREIGN KEY (EquipeID) REFERENCES Equipe(EquipeID);
 
-ALTER TABLE Jeu
-    ADD TypeJeuID INT NOT NULL,
-        StudioId INT NOT NULL,
-        EditeurID INT NOT NULL,
-        FournisseurID INT,
-
-        CONSTRAINT FK_TypeJeuID_TypeJeuID
-        FOREIGN KEY (TypeJeuID) REFERENCES TypeJeu(TypeJeuID),
-
-        CONSTRAINT FK_StudioId_CompagnieID
-        FOREIGN KEY (StudioId) REFERENCES Compagnie(CompagnieID),
-
-        CONSTRAINT FK_EditeurID_CompagnieID
-        FOREIGN KEY (EditeurID) REFERENCES Compagnie(CompagnieID),
-
-        CONSTRAINT FK_FournisseurID_CompagnieID
-        FOREIGN KEY (FournisseurID) REFERENCES Compagnie(CompagnieID);
-
-
-
-
-/* Local */
-ALTER TABLE [Local]
-    ADD CONSTRAINT PK_LocalID
-    PRIMARY KEY (LocalID);
-
-ALTER TABLE [Local]
-    ADD EtablissementID INT NOT NULL,
-
-        CONSTRAINT FK_Local_EtablissementID_EtablissementID
-        FOREIGN KEY (EtablissementID)
-        REFERENCES Etablissement(EtablissementID);
-
-
-/* Competition */
-ALTER TABLE Competition
-    ADD CONSTRAINT PK_CompetitionID
-    PRIMARY KEY (CompetitionID);
-
-ALTER TABLE Competition
-    ADD TournoiID INT NOT NULL,
-        JeuID INT NOT NULL,
-        LocalID INT NOT NULL,
-
-        CONSTRAINT FK_TournoiID_TournoiID
-        FOREIGN KEY (TournoiID) REFERENCES Tournoi(TournoiID),
-
-        CONSTRAINT FK_JeuID_JeuID
-        FOREIGN KEY (JeuID) REFERENCES Jeu(JeuID),
-
-        CONSTRAINT FK_LocalID_LocalID
-        FOREIGN KEY (LocalID) REFERENCES [Local](LocalID);
-
-
-
-
-
-/* Machine */
-ALTER TABLE Machine
-    ADD CONSTRAINT PK_MachineID
-    PRIMARY KEY (MachineID);
-
-
-/* EnregistrementMachine */
-ALTER TABLE EnregistrementMachine
-    ADD CONSTRAINT PK_EnregistrementMachine PRIMARY KEY (TournoiID, JoueurID)
-
-ALTER TABLE EnregistrementMachine ADD CONSTRAINT FK_EnregistrementMachine_Tournoi
-    FOREIGN KEY (TournoiID) REFERENCES Tournoi(TournoiID);
-ALTER TABLE EnregistrementMachine ADD CONSTRAINT FK_EnregistrementMachine_Joueur
-    FOREIGN KEY (JoueurID) REFERENCES Joueur(JoueurID);
-ALTER TABLE EnregistrementMachine ADD CONSTRAINT FK_EnregistrementMachine_Machine
-    FOREIGN KEY (MachineID) REFERENCES Machine(MachineID);
+-- un joueur (ou une equipe) ne s'inscrit qu'une fois a la meme competition
+-- (index filtres : un UNIQUE normal accepterait un seul NULL)
+CREATE UNIQUE INDEX UQ_Inscription_Competition_Joueur
+    ON Inscription(CompetitionID, JoueurID) WHERE JoueurID IS NOT NULL;
+CREATE UNIQUE INDEX UQ_Inscription_Competition_Equipe
+    ON Inscription(CompetitionID, EquipeID) WHERE EquipeID IS NOT NULL;
 GO
 
 
-/* Infraction */
-ALTER TABLE Infraction
-    ADD CONSTRAINT PK_InfractionID
-    PRIMARY KEY (InfractionID);
-
-ALTER TABLE Infraction
-    ADD JoueurID INT NOT NULL,
-        EquipeID INT NOT NULL,
-        CompetitionID INT NOT NULL,
-
-        CONSTRAINT FK_Infraction_JoueurID_JoueurID
-        FOREIGN KEY (JoueurID) REFERENCES Joueur(JoueurID),
-
-        CONSTRAINT FK_Infraction_EquipeID_EquipeID
-        FOREIGN KEY (EquipeID) REFERENCES Equipe(EquipeID),
-
-        CONSTRAINT FK_Infraction_CompetitionID_CompetitionID
-        FOREIGN KEY (CompetitionID) REFERENCES Competition(CompetitionID);
 
 
-/* Inscription */
-ALTER TABLE Inscription
-    ADD CONSTRAINT PK_InscriptionID
-    PRIMARY KEY (InscriptionID);
-
-ALTER TABLE Inscription
-    ADD CompetitionID INT NOT NULL,
-        JoueurID INT,
-        EquipeID INT,
-
-        CONSTRAINT FK_Inscription_CompetitionID_CompetitionID
-        FOREIGN KEY (CompetitionID) REFERENCES Competition(CompetitionID),
-
-        CONSTRAINT FK_Inscription_JoueurID_JoueurID
-        FOREIGN KEY (JoueurID) REFERENCES Joueur(JoueurID),
-
-        CONSTRAINT FK_Inscription_EquipeID_EquipeID
-        FOREIGN KEY (EquipeID) REFERENCES Equipe(EquipeID);
 
 /* 4 Vues */
 
--- CREATE VIEW vCompetitionsAnneeCourante AS 
--- SELECT 
--- ;
+-- V1 : toutes les competitions ayant lieu pendant l'annee courante
+CREATE VIEW vCompetitionsAnneeCourante AS
+SELECT
+    c.CompetitionID,
+    c.CompetitionDate,
+    t.TournoiNom,
+    j.JeuNom,
+    l.LocalNom
+FROM Competition AS c
+INNER JOIN Tournoi AS t ON t.TournoiID = c.TournoiID
+INNER JOIN Jeu AS j ON j.JeuID = c.JeuID
+INNER JOIN [Local] AS l ON l.LocalID = c.LocalID
+WHERE YEAR(c.CompetitionDate) = YEAR(GETDATE());
+GO
 
-/* 5 Fonctions scalaires Exigences techniques */
+-- V2 : tous les joueurs qui ne font partie d'aucune equipe
+CREATE VIEW vJoueursSansEquipe AS
+SELECT
+    JoueurID,
+    JoueurPseudo,
+    JoueurNom,
+    JoueurPrenom,
+    JoueurCourriel
+FROM Joueur
+WHERE EquipeID IS NULL;
+GO
 
-/* 6 Fonctions de table */
+-- V3 : toutes les equipes qui ne sont inscrites a aucune competition
+CREATE VIEW vEquipesNonInscrites AS
+SELECT
+    e.EquipeID,
+    e.EquipeNom
+FROM Equipe AS e
+WHERE NOT EXISTS
+(
+    SELECT 1
+    FROM Inscription AS i
+    WHERE i.EquipeID = e.EquipeID
+);
+GO
 
-/* 7 Declencheurs */
+-- V4 : tous les tournois qui comprennent plus de trois competitions
+CREATE VIEW vTournoisPlusDe3Competitions AS
+SELECT
+    t.TournoiID,
+    t.TournoiNom,
+    COUNT(*) AS NbCompetitions
+FROM Tournoi AS t
+INNER JOIN Competition AS c ON c.TournoiID = t.TournoiID
+GROUP BY t.TournoiID, t.TournoiNom
+HAVING COUNT(*) > 3;
+GO
 
-/* 8 Procedures stockees */
 
-/* 9 elements de securite */
 
-/* 10 Saisie de donnees et tests */
+
+
