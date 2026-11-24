@@ -7,41 +7,47 @@ GO
 IF EXISTS(
     SELECT 1 
     FROM sys.databases
-    WHERE name = N'Starplayers14'
+    WHERE name = N'Starplayers'
 )
 BEGIN
     --delete
     -- si bd est en cours d'exécution ça ne marche plus très bien.
     -- voir comment 
-    EXEC master.dbo.sp_detach_db @dbname = N'Starplayers14'
-    DROP DATABASE Starplayers14
+    ALTER DATABASE Starplayers
+        SET SINGLE_USER
+        WITH ROLLBACK IMMEDIATE
+    DROP DATABASE Starplayers
 END
 
-/* 1 Creation de la base de donnees */
 
-CREATE DATABASE [Starplayers14]
+DECLARE @dossier NVARCHAR(260) =
+    CAST(SERVERPROPERTY('InstanceDefaultDataPath') AS NVARCHAR(260));
+
+/* 1 Creation de la base de donnees */
+DECLARE @sql NVARCHAR(MAX) = N'
+CREATE DATABASE [Starplayers]
 ON PRIMARY
 (
-    NAME = N'Starplayers14',
-    FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.MSSQLSERVER\MSSQL\DATA\Starplayers14.mdf',
+    NAME = N''Starplayers'',
+    FILENAME = N''' + @dossier + N'Starplayers.mdf'',
     SIZE = 8192KB,
     MAXSIZE = 512MB,
     FILEGROWTH = 8192KB
 )
 LOG ON
 (
-    NAME = N'Starplayers14_log',
-    FILENAME = N'C:\Program Files\Microsoft SQL Server\MSSQL17.MSSQLSERVER\MSSQL\DATA\Starplayers14_log.ldf',
+    NAME = N''Starplayers_log'',
+    FILENAME = N''' + @dossier + N'Starplayers_log.ldf'',
     SIZE = 8192KB,
     MAXSIZE = 256MB,
     FILEGROWTH = 8192KB
-);
+);';
+
+EXEC (@sql);
 GO
 
-USE Starplayers14;
+USE Starplayers;
 GO
-
-
 
 /* 2 Creation des tables (et contraintes) */
 
