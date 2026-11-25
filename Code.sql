@@ -461,5 +461,48 @@ GO
 
 
 
+/* 5 Fonctions scalaires */
+   
+-- F1 : nombre de joueurs distincts inscrits a au moins une competition (en solo ou au sein d'une equipe) pendant l'annee recue
+CREATE FUNCTION fnNbJoueursInscrits (@Annee INT)
+RETURNS INT
+AS
+BEGIN
+    DECLARE @resultat INT;
+
+    SELECT @resultat = COUNT(*)
+    FROM
+    (
+        -- joueurs inscrits en solo
+        SELECT i.JoueurID
+        FROM Inscription AS i
+        INNER JOIN Competition AS c ON c.CompetitionID = i.CompetitionID
+        WHERE i.JoueurID IS NOT NULL
+          AND YEAR(c.CompetitionDate) = @Annee
+
+        UNION   -- sans ALL : enleve les doublons
+
+        -- joueurs inscrits par leur equipe
+        SELECT j.JoueurID
+        FROM Inscription AS i
+        INNER JOIN Competition AS c ON c.CompetitionID = i.CompetitionID
+        INNER JOIN Joueur AS j ON j.EquipeID = i.EquipeID
+        WHERE i.EquipeID IS NOT NULL
+          AND YEAR(c.CompetitionDate) = @Annee
+    ) AS joueurs;
+
+    RETURN @resultat;
+END;
+GO
 
 
+
+
+
+-- F2 moyenne du nombre d'inscriptions des competitions solo OU equipe (parametre : solo ou equipe);
+
+
+
+
+
+-- F3 nom du tournoi avec le plus d'inscriptions pour une annee (solo + equipes; une equipe = une inscription) ; param annee
