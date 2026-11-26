@@ -466,7 +466,7 @@ GO
 /* 5 Fonctions scalaires */
    
 -- F1 : nombre de joueurs distincts inscrits a au moins une competition (en solo ou au sein d'une equipe) pendant l'annee recue
-CREATE FUNCTION fnNbJoueursInscrits (@Annee INT)
+CREATE OR ALTER FUNCTION fnNbJoueursInscrits (@Annee INT)
 RETURNS INT
 AS
 BEGIN
@@ -499,36 +499,69 @@ GO
 
 
 -- F2 moyenne du nombre d'inscriptions des competitions solo OU equipe (parametre : solo ou equipe);
-CREATE FUNCTION fnMoyenneInscriptionsEquipes (@EnEquipe TINYINT) -- 0: solo; 1: equipe;
-RETURNS DECIMAL
+-- Corrigé
+CREATE OR ALTER FUNCTION dbo.fnMoyenneInscriptions(@EnEquipe TINYINT)
+RETURNS INT
 AS
 BEGIN
-    DECLARE @resultat DECIMAL;
-        
-        SELECT i.InscriptionID
-        FROM Inscription AS i
-        LEFT JOIN Competition as c ON c.CompetitionID = i.CompetitionID
-     
+    DECLARE @resultat INT;
+
+    IF @EnEquipe = 0
+    BEGIN
+        SELECT @resultat = ROUND(AVG(CAST(NombreInscriptions AS DECIMAL(10,2))), 0)
+        FROM
+        (
+            SELECT COUNT(i.InscriptionID) AS NombreInscriptions
+            FROM Competition AS c
+            INNER JOIN Jeu AS j
+                ON j.JeuID = c.JeuID
+            LEFT JOIN Inscription AS i
+                ON i.CompetitionID = c.CompetitionID
+            WHERE j.JeuEstEnEquipe = 0
+            GROUP BY c.CompetitionID
+        ) AS Inscriptions;
+    END
+    ELSE IF @EnEquipe = 1
+    BEGIN
+        SELECT @resultat = ROUND(AVG(CAST(NombreInscriptions AS DECIMAL(10,2))), 0)
+        FROM
+        (
+            SELECT COUNT(i.InscriptionID) AS NombreInscriptions
+            FROM Competition AS c
+            INNER JOIN Jeu AS j
+                ON j.JeuID = c.JeuID
+            LEFT JOIN Inscription AS i
+                ON i.CompetitionID = c.CompetitionID
+            WHERE j.JeuEstEnEquipe = 1
+            GROUP BY c.CompetitionID
+        ) AS Inscriptions;
+    END
+    ELSE
+    BEGIN
+        RETURN NULL;
+    END;
 
     RETURN @resultat;
-END; 
+END;
+
 
 
 -- F3 nom du tournoi avec le plus d'inscriptions pour une annee (solo + equipes; une equipe = une inscription) ; param annee
-CREATE FUNCTION fnTournoiPlusInscriptions (@annee INT)
-RETURN VARCHAR
+-- Corrigé
+CREATE OR ALTER FUNCTION fnTournoiPlusInscriptions (@annee INT)
+RETURNS VARCHAR(100)
 AS
 BEGIN
-    DECLARE @resultat VARCHAR
+    DECLARE @resultat VARCHAR(100);
 
-    SELECT TOP 1 t.TournoiNom, COUNT(*) as NombreInscription
-    FROM Tournoi as t
-    INNER JOIN Competition as c ON c.TournoiID = t.TournoiID
-    INNER JOIN Inscription as i ON c.CompetitionID = i.CompetitionID
-    WHERE YEAR(CompetitionDate) = 2026
-    GROUP BY t.TournoiNom
+    SELECT TOP 1 @resultat =  t.TournoiNom
+        FROM Tournoi as t
+        INNER JOIN Competition as c ON c.TournoiID = t.TournoiID
+        INNER JOIN Inscription as i ON c.CompetitionID = i.CompetitionID
+        WHERE YEAR(CompetitionDate) = @annee
+        GROUP BY t.TournoiNom;
 
-    RETURN @resultat; -- je vais regarder ca plus tard: retourne le resultat de la requete sql
+    RETURN @resultat;
 END;
 
 
@@ -537,20 +570,29 @@ END;
 
 /* 6 Fonctions de table */
 
--- Les joueurs de l'equipe dont le nom est recu
-CREATE FUNCTION fnMembresEquipe (@EquipeNom VARCHAR(100))
+-- F4: Les joueurs de l'equipe dont le nom est recu
+-- Corrigé
+CREATE OR ALTER FUNCTION fnMembresEquipe (@EquipeNom VARCHAR(100))
 RETURNS TABLE
 AS
 RETURN
 (
-    SELECT j.JoueurPseudo, j.JoueurNom, j.JoueurPrenom, j.JoueurCourriel, e.EquipeNom from Joueur as j
-    INNER JOIN Equipe as e ON j.EquipeID = e.EquipeID
-    where e.EquipeNom = @EquipeNom
+    SELECT  j.JoueurPseudo, 
+            j.JoueurNom, 
+            j.JoueurPrenom, 
+            j.JoueurCourriel, 
+            e.EquipeNom 
+    from Joueur as j
+        INNER JOIN Equipe as e ON j.EquipeID = e.EquipeID
+    WHERE e.EquipeNom = @EquipeNom
 );
 
 
--- pour UN tournoi avec son id en parametre trouver nombre d'insriptions (null/0 inclus)
-CREATE FUNCTION fnInscriptionsParTournoi (@TournoiID INT)
+-- F5: Trouver le nom du tournoi et son nombre d'inscriptions en fonction d'un paramètre( tournoiID) 
+
+-- pour UN tournoi avec son id en parametre, trouver nombre d'insriptions (null/0 inclus)
+--Corrigé
+CREATE OR ALTER FUNCTION fnInscriptionsParTournoi (@TournoiID INT)
 RETURNS TABLE
 AS
 RETURN
@@ -559,7 +601,8 @@ RETURN
     FROM Tournoi as t
     INNER JOIN Competition as c ON c.TournoiID = t.TournoiID
     INNER JOIN Inscription as i ON c.CompetitionID = i.CompetitionID
-    where t.TournoiID = @TournoiID
+    where t.TournoiID = @TournoiID 
+        AND @TournoiID > 0
     Group by t.TournoiID
 );
 
@@ -569,21 +612,36 @@ RETURN
 
 /* 7 Declencheurs */
 
--- Lorsqu'un joueur est supprime, il est d'abord retire de toutes les equipes dont il fait partie.
+-- D1: Lorsqu'un joueur est supprime, il est d'abord retire de toutes les equipes dont il fait partie.
+-- Corrigé
 CREATE TRIGGER trSupprimerJoueur
 ON Joueur
-AFTER DELETE
+INSTEAD OF DELETE
 AS
 BEGIN
-    DELETE FROM Equipe as e
-    WHERE e.
-end;
+    UPDATE j
+    SET EquipeID = NULL
+    FROM Joueur as j 
+    INNER JOIN deleted as d ON
+        d.JoueurID = j.JoueurID;
+
+    UPDATE e
+    SET ChefID = NULL
+    FROM Equipe AS e 
+    INNER JOIN deleted AS d ON
+        e.ChefID = d.JoueurID;
+
+    DELETE j
+    FROM Joueur AS j
+    INNER JOIN deleted AS d ON
+        j.JoueurID = d.JoueurID;
+END;
 
 
 
 
 
--- Lorsque la date d'une competition est modifiee, toutes ses inscriptions (solo et equipes) sont retirees. Sauf si date = pareil.
+-- D2: Lorsque la date d'une competition est modifiee, toutes ses inscriptions (solo et equipes) sont retirees. Sauf si date = pareil.
 CREATE TRIGGER trModifierDateCompetition
 ON Competition
 AFTER UPDATE
