@@ -614,7 +614,7 @@ RETURN
 
 -- D1: Lorsqu'un joueur est supprime, il est d'abord retire de toutes les equipes dont il fait partie.
 -- Corrigé
-CREATE TRIGGER trSupprimerJoueur
+CREATE OR ALTER TRIGGER trSupprimerJoueur
 ON Joueur
 INSTEAD OF DELETE
 AS
